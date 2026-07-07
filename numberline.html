@@ -920,9 +920,18 @@
         els.finalBestPoints.textContent = state.bestPoints;
         els.finalFastest.textContent = `${fastest.toFixed(2)}s`;
         els.finalAverage.textContent = `${average.toFixed(2)}s`;
-        els.missedLine.innerHTML = state.missedInput
-          ? `<div>You entered ${state.missedInput}</div><div>${state.missedEquation}</div>`
-          : `<div>${state.missedEquation}</div>`;
+        els.missedLine.replaceChildren();
+        if (state.missedInput) {
+          const enteredLine = document.createElement("div");
+          enteredLine.textContent = `You entered ${state.missedInput}`;
+          const equationLine = document.createElement("div");
+          equationLine.textContent = state.missedEquation;
+          els.missedLine.append(enteredLine, equationLine);
+        } else {
+          const equationLine = document.createElement("div");
+          equationLine.textContent = state.missedEquation;
+          els.missedLine.append(equationLine);
+        }
         els.resultGrid.hidden = false;
         els.missedLine.hidden = !state.missedEquation;
         els.startButton.textContent = "Restart";
