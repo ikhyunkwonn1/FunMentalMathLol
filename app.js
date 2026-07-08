@@ -106,6 +106,7 @@ const state = {
   answerTimes: [],
   settings: initialSettings,
   pendingLeaderboardRun: null,
+  touchSubmissionArmed: false,
 };
 
 function readNumber(key) {
@@ -276,6 +277,23 @@ function queueNextProblem() {
   render();
 }
 
+function armTouchSubmission() {
+  state.touchSubmissionArmed = true;
+}
+
+function useEnterSubmission() {
+  state.touchSubmissionArmed = false;
+}
+
+function shouldAutoSubmitAnswer(raw) {
+  return (
+    state.status === Status.RUNNING &&
+    state.touchSubmissionArmed &&
+    raw !== "" &&
+    Number(raw) === state.currentProblem.answer
+  );
+}
+
 function startRun() {
   cancelAnimationFrame(state.rafId);
   state.status = Status.RUNNING;
@@ -289,6 +307,7 @@ function startRun() {
   state.missedInput = "";
   state.answerTimes = [];
   state.pendingLeaderboardRun = null;
+  useEnterSubmission();
   closeLeaderboardPrompt();
   els.answerInput.disabled = false;
   els.statusLine.classList.remove("hot");
@@ -835,10 +854,33 @@ function updateSetting(name, value) {
 
 els.answerInput.addEventListener("input", () => {
   els.answerInput.value = els.answerInput.value.replace(/\D+/g, "");
+  const raw = els.answerInput.value.trim();
+  if (shouldAutoSubmitAnswer(raw)) {
+    submitAnswer();
+  }
+});
+
+document.addEventListener(
+  "touchstart",
+  () => {
+    if (state.status === Status.RUNNING) {
+      armTouchSubmission();
+    }
+  },
+  { passive: true }
+);
+
+els.answerInput.addEventListener("pointerdown", (event) => {
+  if (event.pointerType === "touch") {
+    armTouchSubmission();
+    return;
+  }
+  useEnterSubmission();
 });
 
 els.answerInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
+    useEnterSubmission();
     event.preventDefault();
     event.stopPropagation();
     submitAnswer();
