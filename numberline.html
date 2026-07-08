@@ -216,6 +216,17 @@
         text-transform: uppercase;
       }
 
+      .difficulty-score {
+        min-height: 1.2em;
+        margin-top: -16px;
+        color: var(--muted);
+        font-size: 1rem;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        transition: color 120ms linear;
+      }
+
       .stage-danger .pressure,
       .stage-critical .pressure {
         color: var(--danger);
@@ -325,6 +336,177 @@
         line-height: 1.45;
       }
 
+      .customize {
+        display: grid;
+        gap: 0;
+        padding: 14px 0 2px;
+        border-top: 1px solid var(--line);
+        transition: gap 190ms ease;
+      }
+
+      .customize.is-expanded {
+        gap: 12px;
+      }
+
+      .customize summary {
+        list-style: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: fit-content;
+        color: var(--text);
+        font-size: 0.88rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .customize summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .customize summary::before {
+        content: "+";
+        display: inline-grid;
+        place-items: center;
+        width: 18px;
+        height: 18px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 0.78rem;
+        line-height: 1;
+      }
+
+      .customize[open] summary::before {
+        content: "-";
+      }
+
+      .customize-body {
+        display: grid;
+        grid-template-rows: 0fr;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(-8px);
+        transition:
+          grid-template-rows 220ms ease,
+          opacity 160ms ease,
+          transform 220ms ease;
+      }
+
+      .customize.is-expanded .customize-body {
+        grid-template-rows: 1fr;
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .customize-body-inner {
+        overflow: hidden;
+        min-height: 0;
+        display: grid;
+        gap: 12px;
+      }
+
+      .customize-copy {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      .settings-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .setting {
+        display: grid;
+        gap: 8px;
+      }
+
+      .setting label {
+        color: var(--muted);
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      .setting-heading {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .setting-heading output {
+        color: var(--text);
+        font-size: 0.86rem;
+        letter-spacing: 0.02em;
+      }
+
+      .setting-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .setting-options input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .setting-options label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 34px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text);
+        font-size: 0.86rem;
+        letter-spacing: 0.02em;
+        text-transform: none;
+        cursor: pointer;
+        transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+      }
+
+      .setting-options label:hover {
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.22);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .setting-options input:checked + label {
+        border-color: rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.12);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+      }
+
+      .setting-slider {
+        display: grid;
+        gap: 10px;
+      }
+
+      .setting-slider input[type="range"] {
+        width: 100%;
+        margin: 0;
+        accent-color: #f0efe9;
+        cursor: pointer;
+      }
+
+      .slider-scale {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 0.74rem;
+        letter-spacing: 0.02em;
+      }
+
       .result-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -356,10 +538,23 @@
         display: grid;
         gap: 6px;
         padding: 12px;
-        border-left: 3px solid var(--danger);
-        background: var(--danger-soft);
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
         color: var(--text);
         font-variant-numeric: tabular-nums;
+      }
+
+      .missed-detail {
+        color: var(--muted);
+        transition: color 120ms linear;
+      }
+
+      .missed-alert {
+        display: grid;
+        gap: 4px;
+        padding: 8px 10px;
+        border-left: 3px solid var(--danger);
+        background: var(--danger-soft);
       }
 
       .missed[hidden] {
@@ -383,8 +578,8 @@
       }
 
       .start-button:hover {
-        background: var(--warning);
-        border-color: var(--warning);
+        background: #19d27f;
+        border-color: #19d27f;
       }
 
       @keyframes snap-in {
@@ -557,6 +752,7 @@
       <section class="arena" aria-label="Current problem">
         <p class="problem" id="problemText">00 + 00</p>
         <div class="pressure" id="pressureText">Ready</div>
+        <div class="difficulty-score" id="difficultyScore">Difficulty 0.00</div>
       </section>
 
       <section class="bottom">
@@ -579,6 +775,71 @@
           <div class="modal-body">
             <h2 id="overlayTitle">Numberline</h2>
             <p id="overlayCopy">Sprint through two-digit math before the fuse burns down.</p>
+            <details class="customize" id="customizePanel">
+              <summary>Customize</summary>
+              <div class="customize-body">
+                <div class="customize-body-inner">
+                  <p class="customize-copy">Choose how the game starts and what it asks.</p>
+                  <div class="settings-grid">
+                    <div class="setting">
+                      <div class="setting-heading">
+                        <label for="startTimeRange">Starting time</label>
+                        <output id="startTimeValue" for="startTimeRange">10.0s</output>
+                      </div>
+                      <div class="setting-slider">
+                        <input
+                          type="range"
+                          name="startTime"
+                          id="startTimeRange"
+                          min="6"
+                          max="12"
+                          step="0.1"
+                          value="10"
+                          aria-label="Starting time"
+                        />
+                        <div class="slider-scale" aria-hidden="true">
+                          <span>6.0s</span>
+                          <span>12.0s</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="setting">
+                      <div class="setting-heading">
+                        <label for="timeMultiplierRange">Time de-multiplier</label>
+                        <output id="timeMultiplierValue" for="timeMultiplierRange">0.925x</output>
+                      </div>
+                      <div class="setting-slider">
+                        <input
+                          type="range"
+                          name="timeMultiplier"
+                          id="timeMultiplierRange"
+                          min="0.9"
+                          max="0.98"
+                          step="0.005"
+                          value="0.925"
+                          aria-label="Time multiplier"
+                        />
+                        <div class="slider-scale" aria-hidden="true">
+                          <span>0.9x</span>
+                          <span>0.98x</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="setting">
+                      <label>Problem mix</label>
+                      <div class="setting-options" role="radiogroup" aria-label="Problem mix">
+                        <input type="radio" name="operatorMode" id="operatorMode-both" value="both" />
+                        <label for="operatorMode-both">Both</label>
+                        <input type="radio" name="operatorMode" id="operatorMode-add" value="add" />
+                        <label for="operatorMode-add">Addition only</label>
+                        <input type="radio" name="operatorMode" id="operatorMode-sub" value="sub" />
+                        <label for="operatorMode-sub">Subtraction only</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </details>
             <div class="result-grid" id="resultGrid" hidden>
               <div class="result">
                 <span>Streak</span>
@@ -614,6 +875,7 @@
       </div>
     </main>
 
+    <script src="./numberline-difficulty.js"></script>
     <script>
       const Status = {
         IDLE: "idle",
@@ -626,6 +888,9 @@
       const STORAGE_KEYS = {
         bestStreak: "numberlineBestStreak",
         bestPoints: "numberlineBestPoints",
+        startTime: "numberlineStartTime",
+        timeMultiplier: "numberlineTimeMultiplier",
+        operatorMode: "numberlineOperatorMode",
       };
 
       const els = {
@@ -638,6 +903,7 @@
         timeLeft: document.getElementById("timeLeft"),
         problemText: document.getElementById("problemText"),
         pressureText: document.getElementById("pressureText"),
+        difficultyScore: document.getElementById("difficultyScore"),
         answerInput: document.getElementById("answerInput"),
         statusLine: document.getElementById("statusLine"),
         overlay: document.getElementById("overlay"),
@@ -651,8 +917,20 @@
         finalFastest: document.getElementById("finalFastest"),
         finalAverage: document.getElementById("finalAverage"),
         missedLine: document.getElementById("missedLine"),
+        customizePanel: document.getElementById("customizePanel"),
+        customizeSummary: document.querySelector("#customizePanel > summary"),
         startButton: document.getElementById("startButton"),
       };
+
+      const SETTINGS = {
+        startTime: { min: 6, max: 12, step: 0.1, defaultValue: 10 },
+        timeMultiplier: { min: 0.9, max: 0.98, step: 0.005, defaultValue: 0.925 },
+        operatorMode: ["both", "add", "sub"],
+      };
+
+      const initialSettings = readSettings();
+      let customizeExpanded = false;
+      let customizeAnimationFrame = 0;
 
       const state = {
         status: Status.IDLE,
@@ -661,15 +939,18 @@
         bestStreak: readNumber(STORAGE_KEYS.bestStreak),
         bestPoints: readNumber(STORAGE_KEYS.bestPoints),
         currentProblem: null,
-        duration: 10,
+        duration: initialSettings.startTime,
         deadline: 0,
         roundStartedAt: 0,
         rafId: 0,
         lastProblemLabel: "",
         failReason: "",
         missedEquation: "",
+        missedDifficultyColor: "",
+        missedDifficultyScore: "",
         missedInput: "",
         answerTimes: [],
+        settings: initialSettings,
       };
 
       function readNumber(key) {
@@ -688,8 +969,57 @@
         }
       }
 
+      function readSettings() {
+        return {
+          startTime: readNumericSetting(STORAGE_KEYS.startTime, SETTINGS.startTime),
+          timeMultiplier: readNumericSetting(STORAGE_KEYS.timeMultiplier, SETTINGS.timeMultiplier),
+          operatorMode: readOption(STORAGE_KEYS.operatorMode, SETTINGS.operatorMode, "both"),
+        };
+      }
+
+      function readNumericSetting(key, config) {
+        const raw = readStoredValue(key);
+        const fallback = config.defaultValue;
+        if (raw === null) return fallback;
+        const parsed = Number(raw);
+        if (!Number.isFinite(parsed)) return fallback;
+        return normalizeNumericSetting(parsed, config);
+      }
+
+      function readOption(key, allowedValues, fallback) {
+        const raw = readStoredValue(key);
+        const next = raw === null ? fallback : raw;
+        return allowedValues.includes(next) ? next : fallback;
+      }
+
+      function readStoredValue(key) {
+        try {
+          return localStorage.getItem(key);
+        } catch {
+          return null;
+        }
+      }
+
+      function writeSetting(key, value) {
+        try {
+          localStorage.setItem(key, String(value));
+        } catch {
+          // Settings persistence is optional.
+        }
+      }
+
       function clamp(value, min, max) {
         return Math.min(max, Math.max(min, value));
+      }
+
+      function roundToStep(value, step, min) {
+        const decimals = step.toString().includes(".") ? step.toString().split(".")[1].length : 0;
+        const rounded = Math.round((value - min) / step) * step + min;
+        return Number(rounded.toFixed(decimals));
+      }
+
+      function normalizeNumericSetting(value, config) {
+        return roundToStep(clamp(value, config.min, config.max), config.step, config.min);
       }
 
       function randomInt(min, max) {
@@ -701,7 +1031,7 @@
       }
 
       function getRoundDuration(streak) {
-        return Math.max(1.8, 10 * Math.pow(0.925, streak));
+        return Math.max(1.8, state.settings.startTime * Math.pow(state.settings.timeMultiplier, streak));
       }
 
       function getPhase(streak) {
@@ -733,8 +1063,7 @@
         let problem;
 
         for (let attempt = 0; attempt < 12; attempt += 1) {
-          const subtractionChance = streak < 8 ? 0.25 : streak < 18 ? 0.5 : 0.62;
-          const operator = Math.random() < subtractionChance ? "-" : "+";
+          const operator = chooseOperator(streak);
           const min = streak < 8 ? 10 : streak < 18 ? 18 : 31;
           const max = streak < 8 ? 69 : streak < 18 ? 89 : 99;
           const left = randomInt(min, max);
@@ -743,6 +1072,7 @@
           if (operator === "+") {
             problem = {
               answer: left + right,
+              difficultyScore: NumberlineDifficulty.scoreProblem(left, operator, right),
               label: `${left} + ${right}`,
             };
           } else {
@@ -750,6 +1080,7 @@
             const low = Math.min(left, right);
             problem = {
               answer: high - low,
+              difficultyScore: NumberlineDifficulty.scoreProblem(high, operator, low),
               label: `${high} - ${low}`,
             };
           }
@@ -758,6 +1089,13 @@
         }
 
         return problem;
+      }
+
+      function chooseOperator(streak) {
+        if (state.settings.operatorMode === "add") return "+";
+        if (state.settings.operatorMode === "sub") return "-";
+        const subtractionChance = streak < 8 ? 0.25 : streak < 18 ? 0.5 : 0.62;
+        return Math.random() < subtractionChance ? "-" : "+";
       }
 
       function setOverlay(show) {
@@ -790,6 +1128,8 @@
         state.points = 0;
         state.failReason = "";
         state.missedEquation = "";
+        state.missedDifficultyColor = "";
+        state.missedDifficultyScore = "";
         state.missedInput = "";
         state.answerTimes = [];
         els.answerInput.disabled = false;
@@ -807,6 +1147,12 @@
         state.failReason = reason;
         state.missedEquation = state.currentProblem
           ? `${state.currentProblem.label} = ${state.currentProblem.answer}`
+          : "";
+        state.missedDifficultyColor = state.currentProblem
+          ? NumberlineDifficulty.getDifficultyColor(state.currentProblem.difficultyScore)
+          : "";
+        state.missedDifficultyScore = state.currentProblem
+          ? NumberlineDifficulty.formatDifficultyScore(state.currentProblem.difficultyScore)
           : "";
         state.missedInput = submittedAnswer;
         cancelAnimationFrame(state.rafId);
@@ -876,6 +1222,12 @@
         els.bestStreak.textContent = state.bestStreak;
         els.timeLeft.textContent = formatTime(timeLeft);
         els.pressureText.textContent = pressureLabel(stage);
+        els.difficultyScore.textContent = state.currentProblem
+          ? NumberlineDifficulty.formatDifficultyScore(state.currentProblem.difficultyScore)
+          : "Difficulty 0.00";
+        els.difficultyScore.style.color = state.currentProblem
+          ? NumberlineDifficulty.getDifficultyColor(state.currentProblem.difficultyScore)
+          : "";
         els.statusLine.classList.toggle("hot", stage === "danger" || stage === "critical");
       }
 
@@ -921,16 +1273,24 @@
         els.finalFastest.textContent = `${fastest.toFixed(2)}s`;
         els.finalAverage.textContent = `${average.toFixed(2)}s`;
         els.missedLine.replaceChildren();
+        const difficultyLine = document.createElement("div");
+        difficultyLine.className = "missed-detail";
+        difficultyLine.textContent = state.missedDifficultyScore;
+        difficultyLine.style.color = state.missedDifficultyColor;
+        const alertBlock = document.createElement("div");
+        alertBlock.className = "missed-alert";
         if (state.missedInput) {
           const enteredLine = document.createElement("div");
           enteredLine.textContent = `You entered ${state.missedInput}`;
           const equationLine = document.createElement("div");
-          equationLine.textContent = state.missedEquation;
-          els.missedLine.append(enteredLine, equationLine);
+          equationLine.textContent = `Correct answer: ${state.missedEquation}`;
+          alertBlock.append(enteredLine, equationLine);
+          els.missedLine.append(difficultyLine, alertBlock);
         } else {
           const equationLine = document.createElement("div");
-          equationLine.textContent = state.missedEquation;
-          els.missedLine.append(equationLine);
+          equationLine.textContent = `Correct answer: ${state.missedEquation}`;
+          alertBlock.append(equationLine);
+          els.missedLine.append(difficultyLine, alertBlock);
         }
         els.resultGrid.hidden = false;
         els.missedLine.hidden = !state.missedEquation;
@@ -941,6 +1301,59 @@
       function keepFocus() {
         if (state.status === Status.RUNNING) {
           els.answerInput.focus({ preventScroll: true });
+        }
+      }
+
+      function syncSettingsUI() {
+        syncSliderSetting("startTime", state.settings.startTime);
+        syncSliderSetting("timeMultiplier", state.settings.timeMultiplier);
+        selectSetting("operatorMode", state.settings.operatorMode);
+      }
+
+      function syncSliderSetting(name, value) {
+        const input = document.querySelector(`input[name="${name}"]`);
+        if (!(input instanceof HTMLInputElement)) return;
+        input.value = String(value);
+        updateSettingReadout(name, value);
+      }
+
+      function selectSetting(name, value) {
+        const inputs = document.querySelectorAll(`input[name="${name}"]`);
+        inputs.forEach((input) => {
+          input.checked = input.value === value;
+        });
+      }
+
+      function formatSettingValue(name, value) {
+        if (name === "startTime") {
+          return `${value.toFixed(1)}s`;
+        }
+        if (name === "timeMultiplier") {
+          return `${value.toFixed(3).replace(/0+$/, "").replace(/\.$/, "")}x`;
+        }
+        return String(value);
+      }
+
+      function updateSettingReadout(name, value) {
+        const output = document.getElementById(`${name}Value`);
+        if (!(output instanceof HTMLOutputElement)) return;
+        output.value = formatSettingValue(name, Number(value));
+        output.textContent = output.value;
+      }
+
+      function updateSetting(name, value) {
+        const nextValue =
+          name === "startTime" || name === "timeMultiplier"
+            ? normalizeNumericSetting(Number(value), SETTINGS[name])
+            : value;
+        state.settings = { ...state.settings, [name]: nextValue };
+        writeSetting(STORAGE_KEYS[name], nextValue);
+        if (name === "startTime" || name === "timeMultiplier") {
+          syncSliderSetting(name, nextValue);
+        }
+        if (name === "startTime" && state.status !== Status.RUNNING) {
+          state.duration = nextValue;
+          render();
         }
       }
 
@@ -962,7 +1375,42 @@
 
       els.startButton.addEventListener("click", startRun);
 
+      els.customizeSummary.addEventListener("click", (event) => {
+        event.preventDefault();
+        setCustomizeExpanded(!customizeExpanded);
+      });
+
+      els.customizePanel.addEventListener("transitionend", (event) => {
+        if (event.target !== event.currentTarget.querySelector(".customize-body")) return;
+        if (event.propertyName !== "grid-template-rows") return;
+        if (!customizeExpanded) {
+          els.customizePanel.open = false;
+        }
+      });
+
+      els.customizePanel.addEventListener("change", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement)) return;
+        if (target.name === "startTime" || target.name === "timeMultiplier" || target.name === "operatorMode") {
+          updateSetting(target.name, target.value);
+        }
+      });
+
+      els.customizePanel.addEventListener("input", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement)) return;
+        if (target.name === "startTime" || target.name === "timeMultiplier") {
+          updateSetting(target.name, target.value);
+        }
+      });
+
       document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && state.status === Status.RUNNING) {
+          event.preventDefault();
+          failRun("Abandoned");
+          return;
+        }
+
         if (event.key !== "Enter") return;
         if (event.target === els.answerInput) return;
         if (state.status === Status.IDLE || state.status === Status.FAILED) {
@@ -977,6 +1425,32 @@
         }
       });
 
+      function setCustomizeExpanded(expanded) {
+        customizeExpanded = expanded;
+        if (customizeAnimationFrame) {
+          cancelAnimationFrame(customizeAnimationFrame);
+          customizeAnimationFrame = 0;
+        }
+
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          els.customizePanel.open = expanded;
+          els.customizePanel.classList.toggle("is-expanded", expanded);
+          return;
+        }
+
+        if (expanded) {
+          els.customizePanel.open = true;
+          customizeAnimationFrame = requestAnimationFrame(() => {
+            customizeAnimationFrame = 0;
+            els.customizePanel.classList.add("is-expanded");
+          });
+          return;
+        }
+
+        els.customizePanel.classList.remove("is-expanded");
+      }
+
+      syncSettingsUI();
       render();
       showIdleOverlay();
     </script>
