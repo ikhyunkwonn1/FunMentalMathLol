@@ -7,11 +7,11 @@ const Status = {
 const STAGE_CLASSES = ["stage-calm", "stage-warning", "stage-danger", "stage-critical"];
 
 const STORAGE_KEYS = {
-  bestStreak: "numberlineBestStreak",
-  bestPoints: "numberlineBestPoints",
-  startTime: "numberlineStartTime",
-  timeMultiplier: "numberlineTimeMultiplier",
-  operatorMode: "numberlineOperatorMode",
+  bestStreak: "FunMentalMathLolBestStreak",
+  bestPoints: "FunMentalMathLolBestPoints",
+  startTime: "FunMentalMathLolStartTime",
+  timeMultiplier: "FunMentalMathLolTimeMultiplier",
+  operatorMode: "FunMentalMathLolOperatorMode",
 };
 
 const LEADERBOARD_DEFAULTS = {
@@ -428,7 +428,7 @@ function pressureLabel(stage) {
 }
 
 function showIdleOverlay() {
-  els.overlayTitle.textContent = "Numberline";
+  els.overlayTitle.textContent = "FunMentalMathLol";
   els.overlayCopy.textContent = "Sprint through two-digit math before the fuse burns down.";
   els.resultGrid.hidden = true;
   els.missedLine.hidden = true;
