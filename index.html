@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Numberline</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <button class="leaderboard-open-button" id="leaderboardOpenButton" type="button" hidden>
+      👑
+    </button>
+
+    <main class="game stage-calm" id="game">
+      <header class="top">
+        <div class="fuse" aria-hidden="true">
+          <div class="fuse-fill" id="fuseFill"></div>
+        </div>
+
+        <div class="hud">
+          <div class="identity">
+            <h1 class="title">Numberline</h1>
+            <div class="phase" aria-live="polite">
+              <span class="phase-dot" aria-hidden="true"></span>
+              <span id="phaseLabel">Warmup</span>
+            </div>
+          </div>
+
+          <div class="stats" aria-live="polite">
+            <div class="stat">
+              <span>Streak</span>
+              <strong id="streak">0</strong>
+            </div>
+            <div class="stat">
+              <span>Score</span>
+              <strong id="points">0</strong>
+            </div>
+            <div class="stat">
+              <span>Best</span>
+              <strong id="bestStreak">0</strong>
+            </div>
+            <div class="stat">
+              <span>Time</span>
+              <strong id="timeLeft">10.0</strong>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="arena" aria-label="Current problem">
+        <p class="problem" id="problemText">00 + 00</p>
+        <div class="pressure" id="pressureText">Ready</div>
+        <div class="difficulty-score" id="difficultyScore">Difficulty 0.00</div>
+      </section>
+
+      <section class="bottom">
+        <label class="sr-only" for="answerInput">Answer</label>
+        <input
+          class="answer"
+          id="answerInput"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+          disabled
+        />
+        <div class="status-line" id="statusLine" aria-live="polite">Press start.</div>
+      </section>
+
+      <div class="overlay show" id="overlay" aria-hidden="false">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
+          <div class="modal-body">
+            <h2 id="overlayTitle">Numberline</h2>
+            <p id="overlayCopy">Sprint through two-digit math before the fuse burns down.</p>
+            <details class="customize" id="customizePanel">
+              <summary>Customize</summary>
+              <div class="customize-body">
+                <div class="customize-body-inner">
+                  <p class="customize-copy">Choose how the game starts and what it asks.</p>
+                  <div class="settings-grid">
+                    <div class="setting">
+                      <div class="setting-heading">
+                        <label for="startTimeRange">Starting time</label>
+                        <output id="startTimeValue" for="startTimeRange">10.0s</output>
+                      </div>
+                      <div class="setting-slider">
+                        <input
+                          type="range"
+                          name="startTime"
+                          id="startTimeRange"
+                          min="6"
+                          max="12"
+                          step="0.1"
+                          value="10"
+                          aria-label="Starting time"
+                        />
+                        <div class="slider-scale" aria-hidden="true">
+                          <span>6.0s</span>
+                          <span>12.0s</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="setting">
+                      <div class="setting-heading">
+                        <label for="timeMultiplierRange">Time de-multiplier</label>
+                        <output id="timeMultiplierValue" for="timeMultiplierRange">0.925x</output>
+                      </div>
+                      <div class="setting-slider">
+                        <input
+                          type="range"
+                          name="timeMultiplier"
+                          id="timeMultiplierRange"
+                          min="0.9"
+                          max="0.98"
+                          step="0.005"
+                          value="0.925"
+                          aria-label="Time multiplier"
+                        />
+                        <div class="slider-scale" aria-hidden="true">
+                          <span>0.9x</span>
+                          <span>0.98x</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="setting">
+                      <label>Problem mix</label>
+                      <div class="setting-options" role="radiogroup" aria-label="Problem mix">
+                        <input type="radio" name="operatorMode" id="operatorMode-both" value="both" />
+                        <label for="operatorMode-both">Both</label>
+                        <input type="radio" name="operatorMode" id="operatorMode-add" value="add" />
+                        <label for="operatorMode-add">Addition only</label>
+                        <input type="radio" name="operatorMode" id="operatorMode-sub" value="sub" />
+                        <label for="operatorMode-sub">Subtraction only</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </details>
+            <div class="result-grid" id="resultGrid" hidden>
+              <div class="result">
+                <span>Streak</span>
+                <strong id="finalStreak">0</strong>
+              </div>
+              <div class="result">
+                <span>Score</span>
+                <strong id="finalPoints">0</strong>
+              </div>
+              <div class="result">
+                <span>Best streak</span>
+                <strong id="finalBestStreak">0</strong>
+              </div>
+              <div class="result">
+                <span>Best score</span>
+                <strong id="finalBestPoints">0</strong>
+              </div>
+              <div class="result">
+                <span>Fastest</span>
+                <strong id="finalFastest">0.00s</strong>
+              </div>
+              <div class="result">
+                <span>Average</span>
+                <strong id="finalAverage">0.00s</strong>
+              </div>
+            </div>
+            <div class="missed" id="missedLine" hidden></div>
+            <div class="actions">
+              <button class="start-button" id="startButton" type="button">Start Run</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div class="leaderboard-overlay" id="leaderboardOverlay" hidden>
+      <form
+        class="leaderboard-card"
+        id="leaderboardSubmitForm"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="leaderboardPromptTitle"
+      >
+        <h2 id="leaderboardPromptTitle">You made the all-time top 10! 🎉</h2>
+        <p id="leaderboardStatus" aria-live="polite">Claim your spot with a player ID!</p>
+        <div class="leaderboard-entry" id="leaderboardEntry">
+          <div class="leaderboard-run-stats" aria-label="Qualified run stats">
+            <div>
+              <span>Streak</span>
+              <strong id="leaderboardRunStreak">0</strong>
+            </div>
+            <div>
+              <span>Score</span>
+              <strong id="leaderboardRunScore">0</strong>
+            </div>
+            <div>
+              <span>Fastest</span>
+              <strong id="leaderboardRunFastest">0.00s</strong>
+            </div>
+            <div>
+              <span>Average</span>
+              <strong id="leaderboardRunAverage">0.00s</strong>
+            </div>
+          </div>
+          <label for="leaderboardName">Player ID</label>
+          <div class="leaderboard-submit-line">
+            <input
+              id="leaderboardName"
+              name="leaderboardName"
+              type="text"
+              maxlength="24"
+              autocomplete="nickname"
+              spellcheck="false"
+              placeholder="Your ID"
+              required
+            />
+            <button id="leaderboardSubmitButton" type="submit">Save Score</button>
+          </div>
+          <button class="leaderboard-skip" id="leaderboardSkipButton" type="button">Skip</button>
+        </div>
+        <div class="leaderboard-list" id="leaderboardList" hidden>
+          <div class="leaderboard-list-head">
+            <span>#</span>
+            <span>Player ID</span>
+            <span>Score</span>
+            <span>Streak</span>
+            <span>Saved</span>
+          </div>
+          <div class="leaderboard-list-rows" id="leaderboardRows"></div>
+          <button class="leaderboard-return" id="leaderboardReturnButton" type="button">Return to Game</button>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      window.NUMBERLINE_SUPABASE = {
+        url: "https://vtsugrizbhayoqewctti.supabase.co",
+        anonKey: "sb_publishable_asGC1RnRG1-dTPPij06tJw_FSQSpV4K",
+      };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./difficulty_logic.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
