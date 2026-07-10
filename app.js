@@ -763,12 +763,51 @@ async function processLeaderboardRun() {
   openLeaderboardPrompt();
 }
 
+const USERNAME_MAX_LENGTH = 24;
+
+// Blocked words for Player IDs (case-insensitive). This is a policy knob: edit
+// the lists to taste. Group 1 is prefix-matched to catch compounds ("fuckface",
+// "shithead"); group 2 is whole-word only so real names/surnames survive
+// (Fagan, Spicer, Prickett, Pakistani, ...). Kept in sync with the SQL copy.
+const USERNAME_BLOCKLIST =
+  /\b(?:fuck|fuk|fucker|fucking|motherfucker|shit|bullshit|cunt|bitch|bastard|asshole|arsehole|dumbass|jackass|dickhead|whore|wanker|bollocks|nigger|nigga|faggot|retard|retarded)|\b(?:prick|slut|twat|pussy|fag|spic|chink|kike|wetback|tranny|gook|paki)\b/i;
+
+// Allow real names in any script (letters, marks for non-Latin scripts, digits,
+// spaces, and common name punctuation); strip emoji, symbols, and the invisible/
+// bidi/zalgo characters used to deface or impersonate.
+function cleanUsername(raw) {
+  return String(raw || "")
+    .normalize("NFKC")
+    // Strip control chars, soft hyphen, Latin combining marks (zalgo),
+    // and zero-width / bidi / invisible formatting characters.
+    .replace(
+      /[\u0000-\u001F\u007F-\u009F\u00AD\u0300-\u036F\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g,
+      ""
+    )
+    // Keep only letters (any script), remaining marks, digits, spaces, and name punctuation.
+    .replace(/[^\p{L}\p{M}\p{Nd} .'\u2019-]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, USERNAME_MAX_LENGTH);
+}
+
+function usernameHasProfanity(name) {
+  return USERNAME_BLOCKLIST.test(name);
+}
+
 async function submitLeaderboardRun(event) {
   event.preventDefault();
   if (!state.pendingLeaderboardRun || !leaderboardClient) return;
 
-  const username = els.leaderboardName.value.trim();
+  const username = cleanUsername(els.leaderboardName.value);
+  els.leaderboardName.value = username;
   if (!username) {
+    setLeaderboardStatus("Enter a name using letters, numbers, spaces, or . ' -", true);
+    els.leaderboardName.focus();
+    return;
+  }
+  if (usernameHasProfanity(username)) {
+    setLeaderboardStatus("Please choose a name without profanity.", true);
     els.leaderboardName.focus();
     return;
   }

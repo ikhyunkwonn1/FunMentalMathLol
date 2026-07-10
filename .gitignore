@@ -1,0 +1,11 @@
+# OS / editor junk
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Local prototypes / test artifacts (kept locally, not shipped)
+testing.html
+difficulty_logic_testing.py
