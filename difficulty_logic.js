@@ -45,6 +45,19 @@
     fingerprint: 0.075,
   };
 
+  // Placeholder model for x and /: uncalibrated, only rough enough to keep the
+  // difficulty readout and its color meaningful. Tune with the +/- model later.
+  const MUL_DIV_WEIGHTS = {
+    base: 0.9,
+    highFactorLoad: 0.16,
+    lowFactorLoad: 0.08,
+    productMagnitude: 0.004,
+    divisionExtraLoad: 0.55,
+    easyFactorBonus: -0.8,
+    squareBonus: -0.45,
+    nearSquareBonus: -0.15,
+  };
+
   const ANSWER_ONES_AWKWARDNESS = {
     0: -0.45,
     1: -0.08,
@@ -253,7 +266,38 @@
     }
   }
 
+  function scoreMulDiv(left, operator, right) {
+    const factors = operator === "×" ? [left, right] : [right, left / right];
+    const high = Math.max(factors[0], factors[1]);
+    const low = Math.min(factors[0], factors[1]);
+
+    let score = MUL_DIV_WEIGHTS.base;
+    score += high * MUL_DIV_WEIGHTS.highFactorLoad;
+    score += low * MUL_DIV_WEIGHTS.lowFactorLoad;
+    score += high * low * MUL_DIV_WEIGHTS.productMagnitude;
+
+    if (operator === "÷") {
+      score += MUL_DIV_WEIGHTS.divisionExtraLoad;
+    }
+
+    if (low <= 2 || low === 5 || low === 10 || high === 10) {
+      score += MUL_DIV_WEIGHTS.easyFactorBonus;
+    }
+
+    if (high === low) {
+      score += MUL_DIV_WEIGHTS.squareBonus;
+    } else if (high - low === 1) {
+      score += MUL_DIV_WEIGHTS.nearSquareBonus;
+    }
+
+    return Math.max(RAW_SCORE_MIN, score);
+  }
+
   function scoreProblem(left, operator, right) {
+    if (operator === "×" || operator === "÷") {
+      return displayScore(scoreMulDiv(left, operator, right));
+    }
+
     const answer = operator === "+" ? left + right : left - right;
     const reasons = [];
 

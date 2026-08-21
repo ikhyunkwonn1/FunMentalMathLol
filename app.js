@@ -11,13 +11,13 @@ const STORAGE_KEYS = {
   bestPoints: "FunMentalMathLolBestPoints",
   startTime: "FunMentalMathLolStartTime",
   timeMultiplier: "FunMentalMathLolTimeMultiplier",
-  operatorMode: "FunMentalMathLolOperatorMode",
+  gameMode: "FunMentalMathLolGameMode",
 };
 
 const LEADERBOARD_DEFAULTS = {
   startTime: 10,
   timeMultiplier: 0.925,
-  operatorMode: "both",
+  gameMode: "classic",
 };
 
 // Set this to false to remove the temporary leaderboard access button.
@@ -79,7 +79,31 @@ const els = {
 const SETTINGS = {
   startTime: { min: 6, max: 12, step: 0.1, defaultValue: 10 },
   timeMultiplier: { min: 0.9, max: 0.98, step: 0.005, defaultValue: 0.925 },
-  operatorMode: ["both", "add", "sub"],
+  gameMode: ["classic", "full"],
+};
+
+// Full mode operator mix per streak tier, using the same tier cuts as the ranges.
+const FULL_OPERATOR_WEIGHTS = [
+  { maxStreak: 8, weights: { "+": 0.3, "-": 0.2, "×": 0.3, "÷": 0.2 } },
+  { maxStreak: 18, weights: { "+": 0.25, "-": 0.25, "×": 0.3, "÷": 0.2 } },
+  { maxStreak: Infinity, weights: { "+": 0.2, "-": 0.25, "×": 0.3, "÷": 0.25 } },
+];
+
+// Full mode factor ranges per streak tier. The floors rise with the streak so the
+// instant-recall facts (x2, x5) drop out of the pool as the run gets deeper.
+const FULL_FACTOR_TIERS = [
+  { maxStreak: 8, lead: [2, 9], follow: [2, 9] },
+  { maxStreak: 18, lead: [3, 12], follow: [3, 9] },
+  { maxStreak: Infinity, lead: [4, 19], follow: [4, 12] },
+];
+
+// Extra seconds a Full mode problem earns on top of the streak budget. The cost of
+// thinking through a hard problem is fixed, so this is added, never scaled.
+const FULL_TIME_BONUS = {
+  twoDigitByOneDigit: 3,
+  twoDigitByTwoDigit: 6,
+  division: 1,
+  additiveCarry: 1,
 };
 
 const initialSettings = readSettings();
@@ -129,7 +153,7 @@ function readSettings() {
   return {
     startTime: readNumericSetting(STORAGE_KEYS.startTime, SETTINGS.startTime),
     timeMultiplier: readNumericSetting(STORAGE_KEYS.timeMultiplier, SETTINGS.timeMultiplier),
-    operatorMode: readOption(STORAGE_KEYS.operatorMode, SETTINGS.operatorMode, "both"),
+    gameMode: readOption(STORAGE_KEYS.gameMode, SETTINGS.gameMode, "classic"),
   };
 }
 
@@ -186,8 +210,9 @@ function formatTime(seconds) {
   return Math.max(0, seconds).toFixed(1);
 }
 
-function getRoundDuration(streak) {
-  return Math.max(1.8, state.settings.startTime * Math.pow(state.settings.timeMultiplier, streak));
+function getRoundDuration(streak, problem) {
+  const base = Math.max(1.8, state.settings.startTime * Math.pow(state.settings.timeMultiplier, streak));
+  return base + (problem && problem.timeBonus ? problem.timeBonus : 0);
 }
 
 function getPhase(streak) {
@@ -215,41 +240,112 @@ function getShakeIntensity(progress) {
 }
 
 function makeProblem() {
-  const streak = state.streak;
+  const build = state.settings.gameMode === "full" ? buildFullProblem : buildClassicProblem;
   let problem;
 
   for (let attempt = 0; attempt < 12; attempt += 1) {
-    const operator = chooseOperator(streak);
-    const min = streak < 8 ? 10 : streak < 18 ? 18 : 31;
-    const max = streak < 8 ? 69 : streak < 18 ? 89 : 99;
-    const left = randomInt(min, max);
-    const right = randomInt(10, max);
-
-    if (operator === "+") {
-      problem = {
-        answer: left + right,
-        difficultyScore: NumberlineDifficulty.scoreProblem(left, operator, right),
-        label: `${left} + ${right}`,
-      };
-    } else {
-      const high = Math.max(left, right);
-      const low = Math.min(left, right);
-      problem = {
-        answer: high - low,
-        difficultyScore: NumberlineDifficulty.scoreProblem(high, operator, low),
-        label: `${high} - ${low}`,
-      };
-    }
-
+    problem = build(state.streak);
     if (problem.label !== state.lastProblemLabel) break;
   }
 
   return problem;
 }
 
+function buildClassicProblem(streak) {
+  return buildAdditiveProblem(chooseOperator(streak), streak);
+}
+
+function buildAdditiveProblem(operator, streak) {
+  const min = streak < 8 ? 10 : streak < 18 ? 18 : 31;
+  const max = streak < 8 ? 69 : streak < 18 ? 89 : 99;
+  const left = randomInt(min, max);
+  const right = randomInt(10, max);
+
+  if (operator === "+") {
+    return {
+      answer: left + right,
+      difficultyScore: NumberlineDifficulty.scoreProblem(left, operator, right),
+      label: `${left} + ${right}`,
+      left,
+      right,
+    };
+  }
+
+  const high = Math.max(left, right);
+  const low = Math.min(left, right);
+  return {
+    answer: high - low,
+    difficultyScore: NumberlineDifficulty.scoreProblem(high, operator, low),
+    label: `${high} - ${low}`,
+    left: high,
+    right: low,
+  };
+}
+
+function buildFullProblem(streak) {
+  const operator = chooseFullOperator(streak);
+  if (operator === "+" || operator === "-") {
+    const problem = buildAdditiveProblem(operator, streak);
+    problem.timeBonus = additiveTimeBonus(operator, problem.left, problem.right);
+    return problem;
+  }
+
+  const tier = FULL_FACTOR_TIERS.find((entry) => streak < entry.maxStreak);
+  const lead = randomInt(tier.lead[0], tier.lead[1]);
+  const follow = randomInt(tier.follow[0], tier.follow[1]);
+  const timeBonus = factorTimeBonus(operator, lead, follow);
+
+  if (operator === "×") {
+    return {
+      answer: lead * follow,
+      difficultyScore: NumberlineDifficulty.scoreProblem(lead, operator, follow),
+      label: `${lead} × ${follow}`,
+      timeBonus,
+    };
+  }
+
+  const divisor = Math.random() < 0.5 ? lead : follow;
+  const dividend = lead * follow;
+  return {
+    answer: dividend / divisor,
+    difficultyScore: NumberlineDifficulty.scoreProblem(dividend, operator, divisor),
+    label: `${dividend} ÷ ${divisor}`,
+    timeBonus,
+  };
+}
+
+function factorTimeBonus(operator, lead, follow) {
+  const twoDigitFactors = (lead >= 10 ? 1 : 0) + (follow >= 10 ? 1 : 0);
+  let bonus = 0;
+  if (twoDigitFactors === 1) {
+    bonus += FULL_TIME_BONUS.twoDigitByOneDigit;
+  } else if (twoDigitFactors === 2) {
+    bonus += FULL_TIME_BONUS.twoDigitByTwoDigit;
+  }
+  if (operator === "÷") {
+    bonus += FULL_TIME_BONUS.division;
+  }
+  return bonus;
+}
+
+function additiveTimeBonus(operator, left, right) {
+  const leftOnes = left % 10;
+  const rightOnes = right % 10;
+  const carries = operator === "+" ? leftOnes + rightOnes >= 10 : leftOnes < rightOnes;
+  return carries ? FULL_TIME_BONUS.additiveCarry : 0;
+}
+
+function chooseFullOperator(streak) {
+  const weights = FULL_OPERATOR_WEIGHTS.find((tier) => streak < tier.maxStreak).weights;
+  let roll = Math.random() * Object.values(weights).reduce((sum, weight) => sum + weight, 0);
+  for (const [operator, weight] of Object.entries(weights)) {
+    roll -= weight;
+    if (roll < 0) return operator;
+  }
+  return "+";
+}
+
 function chooseOperator(streak) {
-  if (state.settings.operatorMode === "add") return "+";
-  if (state.settings.operatorMode === "sub") return "-";
   const subtractionChance = streak < 8 ? 0.25 : streak < 18 ? 0.5 : 0.62;
   return Math.random() < subtractionChance ? "-" : "+";
 }
@@ -268,7 +364,7 @@ function retrigger(element, className) {
 function queueNextProblem() {
   state.currentProblem = makeProblem();
   state.lastProblemLabel = state.currentProblem.label;
-  state.duration = getRoundDuration(state.streak);
+  state.duration = getRoundDuration(state.streak, state.currentProblem);
   state.roundStartedAt = performance.now();
   state.deadline = state.roundStartedAt + state.duration * 1000;
   els.problemText.textContent = state.currentProblem.label;
@@ -342,6 +438,7 @@ function failRun(reason, submittedAnswer = "") {
 }
 
 function updateBests() {
+  if (state.settings.gameMode !== "classic") return;
   const nextBestStreak = Math.max(state.bestStreak, state.streak);
   const nextBestPoints = Math.max(state.bestPoints, state.points);
   if (nextBestStreak !== state.bestStreak) {
@@ -483,7 +580,7 @@ function leaderboardSettingsAreDefault() {
   return (
     Number(state.settings.startTime.toFixed(1)) === LEADERBOARD_DEFAULTS.startTime &&
     Number(state.settings.timeMultiplier.toFixed(3)) === LEADERBOARD_DEFAULTS.timeMultiplier &&
-    state.settings.operatorMode === LEADERBOARD_DEFAULTS.operatorMode
+    state.settings.gameMode === LEADERBOARD_DEFAULTS.gameMode
   );
 }
 
@@ -493,7 +590,9 @@ function getLeaderboardRunPayload(username = "") {
     p_score: state.points,
     p_starting_time_seconds: Number(state.settings.startTime.toFixed(1)),
     p_time_multiplier: Number(state.settings.timeMultiplier.toFixed(3)),
-    p_operator_mode: state.settings.operatorMode,
+    // The deployed leaderboard schema still requires this column; Classic mode
+    // always mixes + and -, so it is always "both".
+    p_operator_mode: "both",
   };
   if (username) {
     payload.p_username = username;
@@ -841,7 +940,7 @@ function keepFocus() {
 function syncSettingsUI() {
   syncSliderSetting("startTime", state.settings.startTime);
   syncSliderSetting("timeMultiplier", state.settings.timeMultiplier);
-  selectSetting("operatorMode", state.settings.operatorMode);
+  selectSetting("gameMode", state.settings.gameMode);
 }
 
 function syncSliderSetting(name, value) {
@@ -956,7 +1055,7 @@ els.customizePanel.addEventListener("transitionend", (event) => {
 els.customizePanel.addEventListener("change", (event) => {
   const target = event.target;
   if (!(target instanceof HTMLInputElement)) return;
-  if (target.name === "startTime" || target.name === "timeMultiplier" || target.name === "operatorMode") {
+  if (target.name === "startTime" || target.name === "timeMultiplier" || target.name === "gameMode") {
     updateSetting(target.name, target.value);
   }
 });
