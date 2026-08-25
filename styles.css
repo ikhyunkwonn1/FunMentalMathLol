@@ -78,6 +78,10 @@ input {
   animation: hard-shake 180ms ease-out;
 }
 
+.game.mode-timed.failed {
+  animation: none;
+}
+
 .top {
   display: grid;
   gap: 16px;
@@ -214,6 +218,11 @@ input {
 .game.is-running:not(.stage-calm) .arena,
 .game.is-running:not(.stage-calm) .bottom {
   animation: pressure-shake var(--shake-speed) linear infinite;
+}
+
+.game.mode-timed.is-running:not(.stage-calm) .arena,
+.game.mode-timed.is-running:not(.stage-calm) .bottom {
+  animation: none;
 }
 
 .problem {

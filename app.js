@@ -79,8 +79,12 @@ const els = {
 const SETTINGS = {
   startTime: { min: 6, max: 12, step: 0.1, defaultValue: 10 },
   timeMultiplier: { min: 0.9, max: 0.98, step: 0.005, defaultValue: 0.925 },
-  gameMode: ["classic", "full"],
+  gameMode: ["classic", "full", "timed"],
 };
+
+// Total run length for Timed mode: one shared 120s clock instead of a
+// per-problem fuse. A miss doesn't end the run; it just doesn't submit.
+const TIMED_DURATION_SECONDS = 120;
 
 // Full mode operator mix per streak tier, using the same tier cuts as the ranges.
 const FULL_OPERATOR_WEIGHTS = [
@@ -239,8 +243,14 @@ function getShakeIntensity(progress) {
   return clamp((0.5 - progress) / 0.5, 0, 1);
 }
 
+function isTimedMode() {
+  return state.settings.gameMode === "timed";
+}
+
 function makeProblem() {
-  const build = state.settings.gameMode === "full" ? buildFullProblem : buildClassicProblem;
+  // Timed mode auto-locks to the Full problem generator (all operators).
+  const build =
+    state.settings.gameMode === "full" || isTimedMode() ? buildFullProblem : buildClassicProblem;
   let problem;
 
   for (let attempt = 0; attempt < 12; attempt += 1) {
@@ -364,9 +374,13 @@ function retrigger(element, className) {
 function queueNextProblem() {
   state.currentProblem = makeProblem();
   state.lastProblemLabel = state.currentProblem.label;
-  state.duration = getRoundDuration(state.streak, state.currentProblem);
   state.roundStartedAt = performance.now();
-  state.deadline = state.roundStartedAt + state.duration * 1000;
+  if (isTimedMode()) {
+    // One shared clock for the whole run; each problem doesn't get its own budget.
+  } else {
+    state.duration = getRoundDuration(state.streak, state.currentProblem);
+    state.deadline = state.roundStartedAt + state.duration * 1000;
+  }
   els.problemText.textContent = state.currentProblem.label;
   els.answerInput.value = "";
   retrigger(els.problemText, "snap");
@@ -409,6 +423,10 @@ function startRun() {
   els.statusLine.classList.remove("hot");
   els.game.classList.remove("failed");
   setOverlay(false);
+  if (isTimedMode()) {
+    state.duration = TIMED_DURATION_SECONDS;
+    state.deadline = performance.now() + TIMED_DURATION_SECONDS * 1000;
+  }
   queueNextProblem();
   keepFocus();
   tick();
@@ -456,19 +474,28 @@ function submitAnswer() {
   const raw = els.answerInput.value.trim();
   if (raw === "") return;
 
-  const timeLeft = getTimeLeft();
   if (Number(raw) !== state.currentProblem.answer) {
+    if (isTimedMode()) {
+      els.answerInput.value = "";
+      return;
+    }
     failRun("Miss", raw);
     return;
   }
 
+  const timeLeft = getTimeLeft();
   const answerTime = Math.max(0, (performance.now() - state.roundStartedAt) / 1000);
-  const speedBonus = Math.round((timeLeft / state.duration) * 100);
   state.answerTimes.push(answerTime);
-  state.points += 100 + speedBonus;
+  if (isTimedMode()) {
+    state.points += 1;
+    els.statusLine.textContent = "Correct";
+  } else {
+    const speedBonus = Math.round((timeLeft / state.duration) * 100);
+    state.points += 100 + speedBonus;
+    els.statusLine.textContent = `Clean +${100 + speedBonus}`;
+  }
   state.streak += 1;
   updateBests();
-  els.statusLine.textContent = `Clean +${100 + speedBonus}`;
   els.statusLine.classList.remove("hot");
   queueNextProblem();
   keepFocus();
@@ -478,7 +505,7 @@ function tick() {
   if (state.status !== Status.RUNNING) return;
   const timeLeft = getTimeLeft();
   if (timeLeft <= 0) {
-    failRun("Too slow");
+    failRun(isTimedMode() ? "Time's up" : "Too slow");
     return;
   }
   render();
@@ -988,6 +1015,14 @@ function updateSetting(name, value) {
     state.duration = nextValue;
     render();
   }
+  if (name === "gameMode") {
+    syncGameModeClass();
+  }
+}
+
+function syncGameModeClass() {
+  // Timed mode doesn't use the pressure/fail shake effects.
+  els.game.classList.toggle("mode-timed", isTimedMode());
 }
 
 els.answerInput.addEventListener("input", () => {
@@ -1124,5 +1159,6 @@ function setCustomizeExpanded(expanded) {
 }
 
 syncSettingsUI();
+syncGameModeClass();
 render();
 showIdleOverlay();
