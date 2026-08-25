@@ -225,6 +225,11 @@ input {
   animation: none;
 }
 
+.game.mode-timed.stage-danger::after,
+.game.mode-timed.stage-critical::after {
+  opacity: 0;
+}
+
 .problem {
   margin: 0;
   font-size: 8rem;
